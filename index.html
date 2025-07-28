@@ -187,7 +187,7 @@
       if (!nome || !preco || !tempo || !imagem) return;
 
       if (servicoEditando) {
-        await update(ref(db, servicos/${servicoEditando}), { nome, preco, tempo, imagem });
+        await update(ref(db, `servicos/${servicoEditando}`), { nome, preco, tempo, imagem });
         servicoEditando = null;
         btnSalvar.textContent = "Cadastrar Serviço";
       } else {
@@ -228,13 +228,13 @@
 
     window.removerServico = async (id) => {
       if (confirm('Deseja excluir este serviço?')) {
-        await remove(ref(db, servicos/${id}));
+        await remove(ref(db, `servicos/${id}`));
       }
     }
 
     onValue(ref(db, 'agendamentos'), async (snapshot) => {
       tabelaAgendamentos.innerHTML = '';
-      const servicosSnapshot = await (await fetch(https://demobarbearia-4eb73-default-rtdb.firebaseio.com/servicos.json)).json();
+      const servicosSnapshot = await (await fetch(`https://demobarbearia-4eb73-default-rtdb.firebaseio.com/servicos.json`)).json();
       snapshot.forEach(child => {
         const agendamento = child.val();
         const servico = servicosSnapshot?.[agendamento.servicoId];
@@ -245,9 +245,9 @@
           <td>${servico?.nome || 'Serviço removido'}</td>
           <td>${new Date(agendamento.horario).toLocaleString('pt-BR')}</td>
           <td class="${agendamento.status === 'Cancelado' ? 'status-cancelado' : 'status-aprovado'}">${agendamento.status}</td>
-          <td>${whatsapp ? <a href="https://wa.me/55${whatsapp.replace(/\D/g, '')}" target="_blank" style="color:#00e676"><i class="fab fa-whatsapp"></i> Contato</a> : '—'}</td>
+          <td>${whatsapp ? `<a href="https://wa.me/55${whatsapp.replace(/\D/g, '')}" target="_blank" style="color:#00e676"><i class="fab fa-whatsapp"></i> Contato</a>` : '—'}</td>
           <td>
-            ${agendamento.status !== 'Cancelado' ? <button onclick="cancelarAgendamento('${child.key}')">Cancelar</button> : ''}
+            ${agendamento.status !== 'Cancelado' ? `<button onclick="cancelarAgendamento('${child.key}')">Cancelar</button>` : ''}
           </td>
         `;
         tabelaAgendamentos.appendChild(tr);
@@ -256,7 +256,7 @@
 
     window.cancelarAgendamento = async (id) => {
       if (confirm('Deseja cancelar este agendamento?')) {
-        await update(ref(db, agendamentos/${id}), { status: "Cancelado" });
+        await update(ref(db, `agendamentos/${id}`), { status: "Cancelado" });
       }
     };
   </script>
