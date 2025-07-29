@@ -206,7 +206,6 @@
       <div id="agendamentos">
         <h2>Agendamentos</h2>
         <button id="btnLimparAgendamentos">Limpar Agendamentos</button>
-        <button id="btnAgendamentosSemana" style="margin-left: 10px;">Agendamentos da Semana</button>
         <div class="tabela" style="overflow-x:auto;">
           <table id="tabelaAgendamentos">
             <thead>
@@ -308,54 +307,19 @@
       }
     };
 
-    window.cancelarAgendamento = async (id) => {
-      if (confirm('Deseja cancelar este agendamento?')) {
-        await update(ref(db, `agendamentos/${id}`), { status: "Cancelado" });
-      }
-    };
+    onValue(ref(db, 'agendamentos'), async (snapshot) => {
+      tabelaAgendamentos.innerHTML = '';
+      // Pega todos os serviços para associar nome ao agendamento
+      const servicosSnapshot = await (await fetch(`https://demobarbearia-4eb73-default-rtdb.firebaseio.com/servicos.json`)).json();
+      const agendamentos = [];
 
-    window.mostrar = (secao) => {
-      ['cadastro', 'agendamentos', 'servicos'].forEach(id => {
-        document.getElementById(id).classList.add('hidden');
-      });
-      document.getElementById(secao).classList.remove('hidden');
-      document.getElementById('menuLateral').classList.remove('menu-open');
-    };
-
-    btnLimparAgendamentos.addEventListener('click', async () => {
-      if (confirm('Confirme por favor abaixo.')) {
-        try {
-          await remove(ref(db, 'agendamentos'));
-          alert('Concluído com Sucesso.');
-        } catch (error) {
-          alert('Erro ao apagar agendamentos: ' + error.message);
-        }
-      }
-    });
-
-    document.getElementById('btnAgendamentosSemana').addEventListener('click', async () => {
-      const snapshot = await fetch(`https://demobarbearia-4eb73-default-rtdb.firebaseio.com/agendamentos.json`).then(res => res.json());
-      const servicosSnapshot = await fetch(`https://demobarbearia-4eb73-default-rtdb.firebaseio.com/servicos.json`).then(res => res.json());
-
-      const hoje = new Date();
-      const segundaAtual = new Date(hoje);
-      segundaAtual.setDate(hoje.getDate() - hoje.getDay() + 1);
-      segundaAtual.setHours(0, 0, 0, 0);
-
-      const domingoProxima = new Date(segundaAtual);
-      domingoProxima.setDate(segundaAtual.getDate() + 13);
-      domingoProxima.setHours(23, 59, 59, 999);
-
-      const agendamentos = Object.entries(snapshot || {}).map(([id, agendamento]) => ({
-        id,
-        ...agendamento
-      })).filter(agendamento => {
-        const dataAgendada = new Date(agendamento.horario);
-        return dataAgendada >= segundaAtual && dataAgendada <= domingoProxima;
+      snapshot.forEach(child => {
+        const agendamento = child.val();
+        agendamento.id = child.key;
+        agendamentos.push(agendamento);
       });
 
       agendamentos.sort((a, b) => new Date(a.horario) - new Date(b.horario));
-      tabelaAgendamentos.innerHTML = '';
 
       agendamentos.forEach(agendamento => {
         const servico = servicosSnapshot?.[agendamento.servicoId];
@@ -371,10 +335,35 @@
         `;
         tabelaAgendamentos.appendChild(tr);
       });
-
-      alert(`Mostrando ${agendamentos.length} agendamentos da semana atual e próxima.`);
     });
 
+    window.cancelarAgendamento = async (id) => {
+      if (confirm('Deseja cancelar este agendamento?')) {
+        await update(ref(db, `agendamentos/${id}`), { status: "Cancelado" });
+      }
+    };
+
+    window.mostrar = (secao) => {
+      ['cadastro', 'agendamentos', 'servicos'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(secao).classList.remove('hidden');
+      document.getElementById('menuLateral').classList.remove('menu-open');
+    };
+
+    // Botão limpar agendamentos apaga todos do banco
+    btnLimparAgendamentos.addEventListener('click', async () => {
+      if (confirm('Confirme por favor abaixo.')) {
+        try {
+          await remove(ref(db, 'agendamentos'));
+          alert('Concluído com Sucesso.');
+        } catch (error) {
+          alert('Erro ao apagar agendamentos: ' + error.message);
+        }
+      }
+    });
+
+    // Exibir menu com botão ☰
     const toggleMenu = document.getElementById('toggleMenu');
     const menu = document.getElementById('menuLateral');
 
@@ -388,6 +377,7 @@
       }
     });
 
+    // Carrega agendamentos por padrão
     window.onload = () => mostrar('agendamentos');
   </script>
 </body>
