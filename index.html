@@ -205,7 +205,7 @@
 
       <div id="agendamentos">
         <h2>Agendamentos</h2>
-        <button id="btnLimparAgendamentos">Limpar Agendamentos</button>
+        <button id="btnLimparAgendamentos">Concluir Todos</button>
         <div class="tabela" style="overflow-x:auto;">
           <table id="tabelaAgendamentos">
             <thead>
@@ -331,7 +331,10 @@
           <td>${new Date(agendamento.horario).toLocaleString('pt-BR')}</td>
           <td class="${agendamento.status === 'Cancelado' ? 'status-cancelado' : 'status-aprovado'}">${agendamento.status}</td>
           <td>${whatsapp ? `<a href="https://wa.me/55${whatsapp.replace(/\D/g, '')}" target="_blank" style="color:#00e676"><i class="fab fa-whatsapp"></i> Contato</a>` : '—'}</td>
-          <td>${agendamento.status !== 'Cancelado' ? `<button onclick="cancelarAgendamento('${agendamento.id}')">Cancelar</button>` : ''}</td>
+          <td>
+            ${agendamento.status !== 'Cancelado' ? `<button onclick="cancelarAgendamento('${agendamento.id}')">Cancelar</button>` : ''}
+            <button onclick="concluirAgendamento('${agendamento.id}')">Concluído</button>
+          </td>
         `;
         tabelaAgendamentos.appendChild(tr);
       });
@@ -340,6 +343,14 @@
     window.cancelarAgendamento = async (id) => {
       if (confirm('Deseja cancelar este agendamento?')) {
         await update(ref(db, `agendamentos/${id}`), { status: "Cancelado" });
+      }
+    };
+
+    window.concluirAgendamento = async (id) => {
+      try {
+        await remove(ref(db, `agendamentos/${id}`));
+      } catch (error) {
+        alert('Erro ao concluir agendamento: ' + error.message);
       }
     };
 
