@@ -209,6 +209,11 @@
       <div id="agendamentos">
         <h2>Agendamentos</h2>
         <button id="btnLimparAgendamentos"><b>Concluir Todos</b></button>
+
+  <button onclick="filtroAgendamento('semana')">Mostrar Semana</button>
+  <button onclick="filtroAgendamento('mes')">Mostrar Mês</button>
+
+
         <p> Sempre <b>Concluir Todos</b> ao final do Expediente.</p>
         <div class="tabela" style="overflow-x:auto;">
           <table id="tabelaAgendamentos">
@@ -229,7 +234,7 @@
     </main>
   </div>
 
-<script type="module">
+  <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
   import { getDatabase, ref, push, set, remove, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
 
@@ -253,6 +258,7 @@
   const btnLimparAgendamentos = document.getElementById('btnLimparAgendamentos');
 
   let servicoEditando = null;
+  let filtroAgendamentos = 'hoje';
 
   const isToday = (dataISO) => {
     const hoje = new Date();
@@ -261,6 +267,27 @@
       data.getFullYear() === hoje.getFullYear() &&
       data.getMonth() === hoje.getMonth() &&
       data.getDate() === hoje.getDate()
+    );
+  };
+
+  const isThisWeek = (dataISO) => {
+    const hoje = new Date();
+    const data = new Date(dataISO);
+    const primeiroDia = new Date(hoje);
+    const ultimoDia = new Date(hoje);
+    primeiroDia.setDate(hoje.getDate() - hoje.getDay() + 1); // segunda
+    ultimoDia.setDate(hoje.getDate() + (7 - hoje.getDay())); // domingo
+    primeiroDia.setHours(0, 0, 0, 0);
+    ultimoDia.setHours(23, 59, 59, 999);
+    return data >= primeiroDia && data <= ultimoDia;
+  };
+
+  const isThisMonth = (dataISO) => {
+    const hoje = new Date();
+    const data = new Date(dataISO);
+    return (
+      data.getFullYear() === hoje.getFullYear() &&
+      data.getMonth() === hoje.getMonth()
     );
   };
 
@@ -321,9 +348,13 @@
     }
   };
 
-  onValue(ref(db, 'agendamentos'), async (snapshot) => {
-    tabelaAgendamentos.innerHTML = '';
+  async function carregarAgendamentos() {
+    const snapshot = await get(ref(db, 'agendamentos'));
     const servicosSnapshot = await (await fetch(`https://demobarbearia-4eb73-default-rtdb.firebaseio.com/servicos.json`)).json();
+
+    tabelaAgendamentos.innerHTML = '';
+    if (!snapshot.exists()) return;
+
     const agendamentos = [];
 
     snapshot.forEach(child => {
@@ -332,8 +363,14 @@
       agendamentos.push(agendamento);
     });
 
+    const filtroData = {
+      hoje: isToday,
+      semana: isThisWeek,
+      mes: isThisMonth
+    };
+
     agendamentos
-      .filter(a => isToday(a.horario))
+      .filter(a => filtroData[filtroAgendamentos](a.horario))
       .sort((a, b) => new Date(a.horario) - new Date(b.horario))
       .forEach(agendamento => {
         const servico = servicosSnapshot?.[agendamento.servicoId];
@@ -352,7 +389,7 @@
         `;
         tabelaAgendamentos.appendChild(tr);
       });
-  });
+  }
 
   window.cancelarAgendamento = async (id) => {
     if (confirm('Deseja cancelar este agendamento?')) {
@@ -368,24 +405,24 @@
     }
   };
 
-  // NOVA LÓGICA PARA "Concluir Todos"
+  // ✅ CONCLUIR APENAS AGENDAMENTOS DE HOJE (sempre)
   btnLimparAgendamentos.addEventListener('click', async () => {
-    if (!confirm('Deseja concluir (apagar) todos os agendamentos de hoje?')) return;
+    if (!confirm('Deseja concluir (remover) apenas os agendamentos de hoje?')) return;
 
     try {
       const snapshot = await get(ref(db, 'agendamentos'));
       if (!snapshot.exists()) return;
 
-      const updates = [];
+      const promises = [];
       snapshot.forEach(child => {
         const agendamento = child.val();
         if (isToday(agendamento.horario)) {
-          updates.push(remove(ref(db, `agendamentos/${child.key}`)));
+          promises.push(remove(ref(db, `agendamentos/${child.key}`)));
         }
       });
 
-      await Promise.all(updates);
-      alert('Todos os agendamentos de hoje foram concluídos com sucesso.');
+      await Promise.all(promises);
+      alert('Todos os agendamentos de hoje foram concluídos.');
     } catch (error) {
       alert('Erro ao concluir agendamentos de hoje: ' + error.message);
     }
@@ -412,8 +449,18 @@
     }
   });
 
-  window.onload = () => mostrar('agendamentos');
+  // Carrega agendamentos por padrão (hoje)
+  window.onload = () => {
+    mostrar('agendamentos');
+    carregarAgendamentos();
+  };
+window.filtroAgendamento = (tipo) => {
+  filtroAgendamentos = tipo;
+  carregarAgendamentos();
+};
+
 </script>
+
 
 </body>
 </html>
