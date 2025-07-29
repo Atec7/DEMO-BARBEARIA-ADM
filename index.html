@@ -208,10 +208,11 @@
 
       <div id="agendamentos">
         <h2>Agendamentos</h2>
-        <button id="btnLimparAgendamentos"><b>Concluir Todos</b></button>
-
+       
+<button onclick="location.reload()">Mostrar Hoje</button>
   <button onclick="filtroAgendamento('semana')">Mostrar Semana</button>
   <button onclick="filtroAgendamento('mes')">Mostrar Mês</button>
+ <button id="btnLimparAgendamentos"><b>Concluir Todos</b></button>
 
 
         <p> Sempre <b>Concluir Todos</b> ao final do Expediente.</p>
@@ -275,8 +276,8 @@
     const data = new Date(dataISO);
     const primeiroDia = new Date(hoje);
     const ultimoDia = new Date(hoje);
-    primeiroDia.setDate(hoje.getDate() - hoje.getDay() + 1); // segunda
-    ultimoDia.setDate(hoje.getDate() + (7 - hoje.getDay())); // domingo
+    primeiroDia.setDate(hoje.getDate() - hoje.getDay() + 1);
+    ultimoDia.setDate(hoje.getDate() + (7 - hoje.getDay()));
     primeiroDia.setHours(0, 0, 0, 0);
     ultimoDia.setHours(23, 59, 59, 999);
     return data >= primeiroDia && data <= ultimoDia;
@@ -392,10 +393,15 @@
   }
 
   window.cancelarAgendamento = async (id) => {
-    if (confirm('Deseja cancelar este agendamento?')) {
-      await update(ref(db, `agendamentos/${id}`), { status: "Cancelado" });
-    }
-  };
+  if (!confirm('Tem certeza que deseja cancelar este agendamento?')) return;
+
+  try {
+    await remove(ref(db, `agendamentos/${id}`));
+  } catch (error) {
+    alert('Erro ao cancelar agendamento: ' + error.message);
+  }
+};
+
 
   window.concluirAgendamento = async (id) => {
     try {
@@ -405,9 +411,8 @@
     }
   };
 
-  // ✅ CONCLUIR APENAS AGENDAMENTOS DE HOJE (sempre)
   btnLimparAgendamentos.addEventListener('click', async () => {
-    if (!confirm('Deseja concluir (remover) apenas os agendamentos de hoje?')) return;
+    if (!confirm('Confirme abaixo por favor!')) return;
 
     try {
       const snapshot = await get(ref(db, 'agendamentos'));
@@ -449,17 +454,22 @@
     }
   });
 
-  // Carrega agendamentos por padrão (hoje)
+  // Atualiza agendamentos em tempo real sempre que o banco mudar
+  onValue(ref(db, 'agendamentos'), () => {
+    carregarAgendamentos();
+  });
+
   window.onload = () => {
     mostrar('agendamentos');
     carregarAgendamentos();
   };
-window.filtroAgendamento = (tipo) => {
-  filtroAgendamentos = tipo;
-  carregarAgendamentos();
-};
 
+  window.filtroAgendamento = (tipo) => {
+    filtroAgendamentos = tipo;
+    carregarAgendamentos();
+  };
 </script>
+
 
 
 </body>
