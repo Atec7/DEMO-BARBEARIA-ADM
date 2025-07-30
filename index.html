@@ -163,12 +163,42 @@
     .hidden {
       display: none;
     }
+    #notificacao {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgb(1, 169, 1);
+  color: white;
+  font-weight: bold;
+  padding: 20px;
+  border-radius: 10px;
+  z-index: 9999;
+  box-shadow: 0 0 20px rgb(1, 169, 1);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); box-shadow: 0 0 10px red; }
+  50% { transform: scale(1.1); box-shadow: 0 0 20px yellow; }
+  100% { transform: scale(1); box-shadow: 0 0 10px red; }
+}
+
   </style>
 </head>
 <body>
   <header>
     <span id="toggleMenu">☰</span>
     Aplicativo Demonstração
+    <!-- Notificação visual -->
+<div id="notificacao" class="hidden">NOVO AGENDAMENTO RECEBIDO!</div>
+
+<!-- Som de alerta -->
+<audio id="alertaSom" preload="auto">
+  <source src="https://dl.dropbox.com/scl/fi/mvn7oocmifdsuw5tew2yz/spongebob-fail-1.mp3?rlkey=cnk07k1u4k2zjz74vpki420xl&st=1w6twbiz&dl=0" type="audio/ogg">
+  <source src="https://dl.dropbox.com/scl/fi/mvn7oocmifdsuw5tew2yz/spongebob-fail-1.mp3?rlkey=cnk07k1u4k2zjz74vpki420xl&st=1w6twbiz&dl=0" type="audio/mpeg">
+</audio>
+
+
   </header>
 
   <div class="container">
@@ -238,6 +268,11 @@
   <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
   import { getDatabase, ref, push, set, remove, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
+
+  let somLiberado = false;
+  document.addEventListener('click', () => {
+    somLiberado = true;
+  });
 
   const firebaseConfig = {
     apiKey: "AIzaSyD9kWG_RgdfBURwHafLWcN3P_qVxMvqHTE",
@@ -455,9 +490,52 @@
   });
 
   // Atualiza agendamentos em tempo real sempre que o banco mudar
-  onValue(ref(db, 'agendamentos'), () => {
-    carregarAgendamentos();
+let agendamentosAnteriores = {};
+let primeiraLeitura = true;
+
+onValue(ref(db, 'agendamentos'), (snapshot) => {
+  const novosAgendamentos = {};
+  snapshot.forEach(child => {
+    novosAgendamentos[child.key] = child.val();
   });
+
+  if (!primeiraLeitura) {
+    const novosIds = Object.keys(novosAgendamentos);
+    const antigosIds = Object.keys(agendamentosAnteriores);
+
+    const novosRegistros = novosIds.filter(id => !antigosIds.includes(id));
+
+    if (novosRegistros.length > 0) {
+      mostrarNotificacao();
+    }
+  }
+
+  agendamentosAnteriores = novosAgendamentos;
+  primeiraLeitura = false;
+  carregarAgendamentos();
+});
+
+function mostrarNotificacao() {
+  const audio = document.getElementById('alertaSom');
+  const noti = document.getElementById('notificacao');
+
+  if (somLiberado && audio) {
+    audio.volume = 1;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(error => {
+        console.warn('Som não tocado automaticamente:', error.message);
+      });
+    }
+  } else {
+    console.warn('Som bloqueado por falta de interação do usuário.');
+  }
+
+  noti.classList.remove('hidden');
+  setTimeout(() => noti.classList.add('hidden'), 6000);
+}
+
+
 
   window.onload = () => {
     mostrar('agendamentos');
