@@ -492,26 +492,33 @@
   };
 
   btnLimparAgendamentos.addEventListener('click', async () => {
-    if (!confirm('Confirme abaixo por favor!')) return;
+  if (!confirm('Confirme abaixo por favor!')) return;
 
-    try {
-      const snapshot = await get(ref(db, 'agendamentos'));
-      if (!snapshot.exists()) return;
+  try {
+    const snapshot = await get(ref(db, 'agendamentos'));
+    if (!snapshot.exists()) return;
 
-      const promises = [];
-      snapshot.forEach(child => {
-        const agendamento = child.val();
-        if (isToday(agendamento.horario)) {
-          promises.push(remove(ref(db, `agendamentos/${child.key}`)));
-        }
-      });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Zera horas para comparar apenas a data
 
-      await Promise.all(promises);
-      alert('Todos os agendamentos de hoje foram concluídos.');
-    } catch (error) {
-      alert('Erro ao concluir agendamentos de hoje: ' + error.message);
-    }
-  });
+    const promises = [];
+    snapshot.forEach(child => {
+      const agendamento = child.val();
+      const agendamentoDate = new Date(agendamento.horario);
+      agendamentoDate.setHours(0, 0, 0, 0); // Zera também aqui
+
+      if (agendamentoDate <= today) {
+        promises.push(remove(ref(db, `agendamentos/${child.key}`)));
+      }
+    });
+
+    await Promise.all(promises);
+    alert('Todos os agendamentos até hoje foram concluídos.');
+  } catch (error) {
+    alert('Erro ao concluir agendamentos: ' + error.message);
+  }
+});
+
 
   window.mostrar = (secao) => {
     ['cadastro', 'agendamentos', 'servicos'].forEach(id => {
