@@ -163,24 +163,33 @@
     .hidden {
       display: none;
     }
-    #notificacao {
+     #notificacao {
   position: fixed;
   top: 20px;
   right: 20px;
-  background: rgb(1, 169, 1);
-  color: white;
-  font-weight: bold;
-  padding: 20px;
-  border-radius: 10px;
+  background: linear-gradient(135deg, #28a745, #218838); /* verde moderno */
+  color: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 600;
+  padding: 16px 24px;
+  border-radius: 12px;
   z-index: 9999;
-  box-shadow: 0 0 20px rgb(1, 169, 1);
-  animation: pulse 1s infinite;
+  box-shadow: 0 4px 20px rgba(0, 128, 0, 0.3);
+  animation: fadeInSlide 0.6s ease-out, subtlePulse 2.5s infinite;
+  max-width: 300px;
+  box-sizing: border-box;
 }
 
-@keyframes pulse {
-  0% { transform: scale(1); box-shadow: 0 0 10px red; }
-  50% { transform: scale(1.1); box-shadow: 0 0 20px yellow; }
-  100% { transform: scale(1); box-shadow: 0 0 10px red; }
+/* Animação de entrada */
+@keyframes fadeInSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
   </style>
