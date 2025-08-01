@@ -611,6 +611,43 @@ botaoSom.addEventListener('click', () => {
     filtroAgendamentos = tipo;
     carregarAgendamentos();
   };
+
+  // Monitorar o nó "notificacoes" no Firebase
+let notificacoesAnteriores = {};
+let primeiraLeituraNotif = true;
+
+onValue(ref(db, 'notificacoes'), (snapshot) => {
+  const novasNotificacoes = {};
+  snapshot.forEach(child => {
+    novasNotificacoes[child.key] = child.val();
+  });
+
+  if (!primeiraLeituraNotif) {
+    const novosIds = Object.keys(novasNotificacoes);
+    const antigosIds = Object.keys(notificacoesAnteriores);
+
+    const novasEntradas = novosIds.filter(id => !antigosIds.includes(id));
+
+    if (novasEntradas.length > 0) {
+      tocarAudioNotificacao();
+    }
+  }
+
+  notificacoesAnteriores = novasNotificacoes;
+  primeiraLeituraNotif = false;
+});
+
+// Toca o novo áudio da notificação
+function tocarAudioNotificacao() {
+  const som = new Audio("https://dl.dropbox.com/scl/fi/nbwejvu6r6mvcdlp0ljte/luvvoice.com-20250801-pNuFKJ.mp3?rlkey=4dvy1vzxnhfdaa1pyofegmzuh&st=t20b5r26&dl=0");
+  som.volume = 1;
+  if (somLiberado) {
+    som.play().catch(err => {
+      console.warn("Erro ao tocar áudio de notificação:", err.message);
+    });
+  }
+}
+
 </script>
 
 
