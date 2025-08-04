@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8" name="theme-color" content="#FFD700"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin - Barbearia</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.json" />
   <style>
     body {
       margin: 0; padding: 0;
@@ -649,7 +650,15 @@ function tocarAudioNotificacao() {
 }
 
 </script>
-
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js');
+        .then(reg => console.log('Service Worker registrado!', reg.scope))
+        .catch(err => console.error('Erro ao registrar o Service Worker', err));
+    });
+  }
+</script>
 
 
 </body>
